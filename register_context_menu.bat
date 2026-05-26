@@ -17,7 +17,6 @@ if exist "%APP_DIR%\.venv\Scripts\python.exe" (
 )
 
 set "SCRIPT=%APP_DIR%\remove_bg.py"
-set "MENU_KEY=HKCU\Software\Classes\SystemFileAssociations\image\shell\RemoveBackground"
 set "MENU_LABEL=Remove Background"
 set "MENU_ICON=%SystemRoot%\System32\imageres.dll,67"
 
@@ -27,20 +26,21 @@ if not exist "%SCRIPT%" (
     exit /b 1
 )
 
-reg add "%MENU_KEY%" /ve /d "%MENU_LABEL%" /f >nul
-reg add "%MENU_KEY%" /v "Icon" /d "%MENU_ICON%" /f >nul
-reg add "%MENU_KEY%" /v "MultiSelectModel" /d "Document" /f >nul
-reg add "%MENU_KEY%\command" /ve /d "\"%PYTHON%\" \"%SCRIPT%\" %%*" /f >nul
-
-if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to write registry keys. Try running as your normal user account.
-    pause
-    exit /b 1
-)
+for %%E in (.avif .bmp .gif .jpeg .jpg .png .tif .tiff .webp image) do call :RegisterExtension %%E
 
 echo Registered "Remove Background" for image files.
+echo Extensions: .avif .bmp .gif .jpeg .jpg .png .tif .tiff .webp
 echo Right-click any image in Explorer to use it.
 echo.
 echo If the menu does not appear immediately, restart Explorer or sign out/in.
 echo.
 pause
+exit /b 0
+
+:RegisterExtension
+set "MENU_KEY=HKCU\Software\Classes\SystemFileAssociations\%~1\shell\RemoveBackground"
+reg add "%MENU_KEY%" /ve /d "%MENU_LABEL%" /f >nul
+reg add "%MENU_KEY%" /v "Icon" /d "%MENU_ICON%" /f >nul
+reg add "%MENU_KEY%" /v "MultiSelectModel" /d "Document" /f >nul
+reg add "%MENU_KEY%\command" /ve /d "\"%PYTHON%\" \"%SCRIPT%\" %%*" /f >nul
+exit /b 0

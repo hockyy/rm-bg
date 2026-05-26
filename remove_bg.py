@@ -20,6 +20,7 @@ SUPPORTED_EXTENSIONS = {
 }
 
 OUTPUT_EXTENSIONS = {".avif", ".jpeg", ".jpg", ".png", ".webp"}
+OUTPUT_SUFFIX = "_rm_bg"
 
 
 def _register_avif_plugin() -> None:
@@ -52,8 +53,18 @@ def _save_image(image, path: Path) -> None:
         image.save(path, "PNG", optimize=True)
 
 
-def _default_output_path(input_path: Path) -> Path:
-    return input_path.with_name(f"{input_path.stem}_nobg.png")
+def _output_extension(input_path: Path, format_override: str | None) -> str:
+    if format_override:
+        return f".{format_override.lstrip('.')}"
+    ext = input_path.suffix.lower()
+    if ext in OUTPUT_EXTENSIONS:
+        return ext
+    return ".png"
+
+
+def _default_output_path(input_path: Path, format_override: str | None = None) -> Path:
+    ext = _output_extension(input_path, format_override)
+    return input_path.with_name(f"{input_path.stem}{OUTPUT_SUFFIX}{ext}")
 
 
 def remove_background(input_path: Path, output_path: Path | None = None) -> Path:
@@ -111,8 +122,8 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--format",
         choices=sorted(ext.lstrip(".") for ext in OUTPUT_EXTENSIONS),
-        default="png",
-        help="Output format when --output is not set (default: png)",
+        default=None,
+        help="Output format when --output is not set (default: same as input)",
     )
     parser.add_argument(
         "--quiet",
@@ -140,14 +151,8 @@ def main(argv: list[str] | None = None) -> int:
 
             if args.output:
                 output_path = Path(args.output)
-            elif len(inputs) == 1:
-                output_path = input_path.with_name(
-                    f"{input_path.stem}_nobg.{args.format}"
-                )
             else:
-                output_path = input_path.with_name(
-                    f"{input_path.stem}_nobg.{args.format}"
-                )
+                output_path = _default_output_path(input_path, args.format)
 
             result = remove_background(input_path, output_path)
             succeeded.append(result)
@@ -178,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 _show_message(
                     "Remove Background",
-                    f"Saved {len(succeeded)} file(s) with '_nobg' suffix.",
+                    f"Saved {len(succeeded)} file(s) with '{OUTPUT_SUFFIX}' suffix.",
                 )
 
     return 0 if not failed else 1

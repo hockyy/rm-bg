@@ -26,8 +26,8 @@ Desktop.ini
 .DS_Store
 
 # Generated output from this app
-*_nobg.png
-*_nobg.jpg
-*_nobg.jpeg
-*_nobg.webp
-*_nobg.avif
+*_rm_bg.png
+*_rm_bg.jpg
+*_rm_bg.jpeg
+*_rm_bg.webp
+*_rm_bg.avif
