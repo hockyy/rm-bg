@@ -40,17 +40,25 @@ def _load_image(path: Path):
         return img.convert("RGBA")
 
 
-def _save_image(image, path: Path) -> None:
+def _save_image(image, path: Path) -> Path:
     ext = path.suffix.lower()
-    if ext in (".jpg", ".jpeg"):
-        rgb = image.convert("RGB")
-        rgb.save(path, "JPEG", quality=95, optimize=True)
-    elif ext == ".webp":
-        image.save(path, "WEBP", lossless=True, method=6)
-    elif ext == ".avif":
-        image.save(path, "AVIF", quality=90)
-    else:
-        image.save(path, "PNG", optimize=True)
+    try:
+        if ext in (".jpg", ".jpeg"):
+            rgb = image.convert("RGB")
+            rgb.save(path, "JPEG", quality=95, optimize=True)
+        elif ext == ".webp":
+            image.save(path, "WEBP", lossless=True, method=6)
+        elif ext == ".avif":
+            image.save(path, "AVIF", quality=90)
+        else:
+            image.save(path, "PNG", optimize=True)
+    except Exception:
+        if ext == ".png":
+            raise
+        fallback = path.with_suffix(".png")
+        image.save(fallback, "PNG", optimize=True)
+        return fallback
+    return path
 
 
 def _output_extension(input_path: Path, format_override: str | None) -> str:
@@ -90,8 +98,8 @@ def remove_background(input_path: Path, output_path: Path | None = None) -> Path
 
     image = _load_image(input_path)
     result = remove(image)
-    _save_image(result, output_path)
-    return output_path
+    saved_path = _save_image(result, output_path)
+    return saved_path
 
 
 def _show_message(title: str, message: str, error: bool = False) -> None:
@@ -134,8 +142,27 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(argv or sys.argv[1:])
-    inputs = [Path(p) for p in args.inputs]
+    raw_argv = argv if argv is not None else sys.argv[1:]
+    if not raw_argv:
+        _show_message(
+            "Remove Background",
+            "No image file was provided.\n\n"
+            "Re-run register_context_menu.bat if this keeps happening.",
+            error=True,
+        )
+        return 1
+
+    try:
+        args = _parse_args(raw_argv)
+    except SystemExit:
+        _show_message(
+            "Remove Background",
+            "Invalid arguments.\n\nUsage: remove_bg.py image1 [image2 ...]",
+            error=True,
+        )
+        return 1
+
+    inputs = [Path(p.strip('"')) for p in args.inputs]
 
     if args.output and len(inputs) > 1:
         _show_message("Remove Background", "--output works with a single input file only.", error=True)
@@ -190,4 +217,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except Exception as exc:  # noqa: BLE001
+        _show_message("Remove Background", f"Unexpected error:\n{exc}", error=True)
+        raise SystemExit(1)

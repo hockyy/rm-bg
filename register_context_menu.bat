@@ -16,11 +16,11 @@ if exist "%APP_DIR%\.venv\Scripts\python.exe" (
     )
 )
 
-set "SCRIPT=%APP_DIR%\remove_bg.py"
+set "SCRIPT=%APP_DIR%\remove_bg_menu.bat"
 set "MENU_LABEL=Remove Background"
 set "MENU_ICON=%SystemRoot%\System32\imageres.dll,67"
 
-if not exist "%SCRIPT%" (
+if not exist "%APP_DIR%\remove_bg.py" (
     echo ERROR: remove_bg.py not found in %APP_DIR%
     pause
     exit /b 1
@@ -41,6 +41,6 @@ exit /b 0
 set "MENU_KEY=HKCU\Software\Classes\SystemFileAssociations\%~1\shell\RemoveBackground"
 reg add "%MENU_KEY%" /ve /d "%MENU_LABEL%" /f >nul
 reg add "%MENU_KEY%" /v "Icon" /d "%MENU_ICON%" /f >nul
-reg add "%MENU_KEY%" /v "MultiSelectModel" /d "Document" /f >nul
-reg add "%MENU_KEY%\command" /ve /d "\"%PYTHON%\" \"%SCRIPT%\" %%*" /f >nul
+reg add "%MENU_KEY%" /v "MultiSelectModel" /d "Player" /f >nul
+reg add "%MENU_KEY%\command" /ve /d "\"%SCRIPT%\" \"%%1\"" /f >nul
 exit /b 0
